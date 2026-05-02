@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DENGUE VCA — Painel Epidemiológico</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#06090f;--sur:#0d1220;--su2:#131a2e;--bor:#1a2640;
+  --red:#e63946;--cyn:#48cae4;--grn:#57cc99;--gld:#ffd166;
+  --ora:#f4845f;--vio:#c77dff;--txt:#d6e4f0;--mut:#4a6785;
+  --fd:'Syne',sans-serif;--fm:'DM Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:var(--fm);font-size:13px}
+.page{max-width:1540px;margin:0 auto;padding:26px 20px 60px}
+.hdr{display:flex;align-items:flex-end;justify-content:space-between;
+  border-bottom:1px solid var(--bor);padding-bottom:22px;margin-bottom:26px;flex-wrap:wrap;gap:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:rgba(230,57,70,.12);
+  border:1px solid rgba(230,57,70,.3);color:var(--red);font-family:var(--fd);font-size:10px;
+  font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:4px 11px;
+  border-radius:20px;margin-bottom:9px}
+.pill::before{content:'●';font-size:7px;animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+h1{font-family:var(--fd);font-size:34px;font-weight:800;color:#fff;letter-spacing:-1.5px;line-height:1}
+h1 em{color:var(--red);font-style:normal}
+.hsub{color:var(--mut);font-size:11px;margin-top:5px}
+.tbadge .lbl{font-size:10px;color:var(--mut);letter-spacing:1px;text-transform:uppercase}
+.tbadge .num{font-family:var(--fd);font-size:28px;font-weight:800;color:var(--red);line-height:1.1;text-align:right}
+.tbadge .sub2{font-size:10px;color:var(--mut);text-align:right}
+.notice{display:flex;gap:10px;background:rgba(255,209,102,.06);border:1px solid rgba(255,209,102,.22);
+  border-radius:8px;padding:10px 14px;margin-bottom:22px;font-size:11px;color:var(--gld)}
+.etag{display:inline-block;background:rgba(230,57,70,.2);border:1px solid rgba(230,57,70,.4);
+  color:var(--red);border-radius:3px;padding:1px 5px;font-size:10px;margin:0 2px}
+.kstrip{display:grid;grid-template-columns:repeat(13,1fr);gap:7px;margin-bottom:28px}
+@media(max-width:1200px){.kstrip{grid-template-columns:repeat(7,1fr)}}
+@media(max-width:600px){.kstrip{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--sur);border:1px solid var(--bor);border-radius:7px;
+  padding:11px 8px;text-align:center;position:relative;overflow:hidden;
+  transition:border-color .2s,transform .15s;cursor:default}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc,var(--cyn))}
+.kpi:hover{border-color:var(--kc,var(--cyn));transform:translateY(-2px)}
+.kpi.ep{background:rgba(230,57,70,.07);border-color:rgba(230,57,70,.2)}
+.kpi.ep::before{background:var(--red)}
+.kpi.k26{background:rgba(199,125,255,.06);border-color:rgba(199,125,255,.3)}
+.kpi.k26::before{background:var(--vio)}
+.kyr{font-family:var(--fd);font-size:10px;font-weight:700;color:var(--mut);letter-spacing:.7px}
+.kval{font-family:var(--fd);font-size:14px;font-weight:800;color:#fff;margin-top:3px}
+.kinc{font-size:9px;color:var(--gld);margin-top:2px}
+.ktag{font-size:8px;margin-top:2px;min-height:10px;color:var(--kc,var(--cyn))}
+.sec{font-family:var(--fd);font-size:11px;font-weight:700;color:var(--cyn);
+  text-transform:uppercase;letter-spacing:2.5px;margin-bottom:12px;
+  display:flex;align-items:center;gap:10px}
+.sec::after{content:'';flex:1;height:1px;background:var(--bor)}
+.card{background:var(--sur);border:1px solid var(--bor);border-radius:11px;
+  padding:20px;margin-bottom:24px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 8% 0%,rgba(72,202,228,.04) 0%,transparent 55%)}
+.ctit{font-family:var(--fd);font-size:14px;font-weight:700;color:#fff}
+.csub{font-size:10px;color:var(--mut);margin-top:3px}
+.chdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:13px;flex-wrap:wrap;gap:7px}
+.leg{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:12px;font-size:10px;color:var(--mut)}
+.li{display:flex;align-items:center;gap:5px}
+.ld{width:10px;height:10px;border-radius:2px}
+.ll{width:16px;height:2px}
+.lk{width:16px;height:0;border-top:2px dashed}
+.trow{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.tbtn{font-family:var(--fm);font-size:10px;padding:3px 9px;border-radius:20px;
+  border:1px solid;cursor:pointer;transition:all .15s;background:transparent}
+.tbtn.dim{opacity:.28}
+.cyrow{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:15px}
+.cybtn{font-family:var(--fd);font-size:11px;font-weight:700;padding:5px 13px;
+  border-radius:6px;border:1px solid var(--bor);cursor:pointer;
+  transition:all .18s;background:transparent;color:var(--mut)}
+.cybtn:hover{color:var(--txt);border-color:var(--mut)}
+.cybtn.on{background:var(--su2);color:#fff;border-color:var(--cyn)}
+.cybtn.al{border-color:rgba(230,57,70,.45);color:var(--red)}
+.cybtn.al.on{background:rgba(230,57,70,.1);border-color:var(--red)}
+.cybtn.c26{border-color:rgba(199,125,255,.45);color:var(--vio);font-weight:800}
+.cybtn.c26.on{background:rgba(199,125,255,.1);border-color:var(--vio)}
+.cybtn.cex{opacity:.45;text-decoration:line-through}
+.adot{display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--red);margin-left:4px;vertical-align:middle}
+.cstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-bottom:17px}
+.csc{background:var(--su2);border:1px solid var(--bor);border-radius:7px;padding:11px 13px}
+.csl{font-size:9px;color:var(--mut);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}
+.csv2{font-family:var(--fd);font-size:17px;font-weight:800;color:#fff}
+.css{font-size:9px;color:var(--mut);margin-top:2px}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:9px;margin-bottom:26px}
+.rc{background:var(--sur);border:1px solid var(--bor);border-radius:8px;
+  padding:12px 10px;text-align:center;transition:border-color .2s}
+.rc.rbase{border-color:rgba(72,202,228,.4)}
+.rc.rex{opacity:.5;border-style:dashed}
+.rc:hover{border-color:var(--mut)}
+.ryr{font-family:var(--fd);font-size:10px;font-weight:700;color:var(--mut)}
+.rtot{font-family:var(--fd);font-size:15px;font-weight:800;color:#fff;margin:3px 0 1px}
+.rval{font-size:12px;font-weight:600}
+.rinc{font-size:9px;color:var(--gld);margin-top:2px}
+.rbar{height:3px;background:var(--bor);border-radius:2px;margin-top:8px}
+.rbfill{height:100%;border-radius:2px;transition:width .6s}
+.ftr{border-top:1px solid var(--bor);padding-top:16px;margin-top:8px;
+  color:var(--mut);font-size:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:7px}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.page>*{animation:fu .5s ease both}
+.page>*:nth-child(1){animation-delay:.00s}.page>*:nth-child(2){animation-delay:.06s}
+.page>*:nth-child(3){animation-delay:.11s}.page>*:nth-child(4){animation-delay:.16s}
+.page>*:nth-child(5){animation-delay:.21s}.page>*:nth-child(6){animation-delay:.26s}
+.page>*:nth-child(7){animation-delay:.31s}.page>*:nth-child(8){animation-delay:.36s}
+.page>*:nth-child(9){animation-delay:.41s}.page>*:nth-child(10){animation-delay:.46s}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="hdr">
+  <div>
+    <div class="pill">Vigilância Epidemiológica</div>
+    <h1>DENGUE <em>VCA</em></h1>
+    <div class="hsub">Vitória da Conquista · Semanas Epidemiológicas 01–53 · 2014–2026</div>
+  </div>
+  <div class="tbadge">
+    <div class="lbl">Total acumulado 2014–2025</div>
+    <div class="num">48.996</div>
+    <div class="sub2">casos notificados</div>
+  </div>
+</div>
+<div class="notice">⚡
+  <div><b>Baseline corrigida:</b> Q1, Mediana e Q3 excluindo anos epidêmicos —
+  <span class="etag">2016</span><span class="etag">2020</span><span class="etag">2024</span>
+  · Baseline: 2014,2015,2017,2018,2019,2021,2022,2023,2025 (n=9)
+  · CUSUM 2026 monitorado contra esta baseline limpa.</div>
+</div>
+<div class="kstrip" id="kstrip"></div>
+<div class="sec">Panorama Anual · Anos Epidêmicos em Destaque</div>
+<div class="card">
+  <div class="chdr"><div>
+    <div class="ctit">Total de Casos e Incidência por Ano</div>
+    <div class="csub">
+      <span style="color:var(--red)">■</span> Epidêmico (excluído da baseline) &nbsp;|&nbsp;
+      <span style="color:var(--cyn)">■</span> Na baseline &nbsp;|&nbsp;
+      <span style="color:var(--vio)">■</span> 2026 em curso &nbsp;|&nbsp;
+      <span style="color:var(--gld)">◆</span> Incidência/100k hab.
+    </div>
+  </div></div>
+  <div style="height:320px"><canvas id="barChart"></canvas></div>
+</div>
+<div class="sec">Diagrama de Controle · Baseline Corrigida (sem 2016/2020/2024)</div>
+<div class="card">
+  <div class="chdr"><div>
+    <div class="ctit">Canal Endêmico Q1–Q3 · Mediana · Curvas por Ano</div>
+    <div class="csub">QUARTILE.EXC · n=9 anos na baseline · clique para mostrar/ocultar</div>
+  </div></div>
+  <div class="leg">
+    <div class="li"><div class="ld" style="background:rgba(87,204,153,.28);border:1px solid #57cc99"></div><span>Canal Q1–Q3</span></div>
+    <div class="li"><div class="ll" style="background:#57cc99"></div><span>Mediana</span></div>
+    <div class="li"><div class="lk" style="border-color:#ffd166"></div><span>Q3 limite sup.</span></div>
+    <div class="li"><div class="lk" style="border-color:rgba(87,204,153,.7)"></div><span>Q1 limite inf.</span></div>
+  </div>
+  <div class="trow" id="trow"></div>
+  <div style="height:420px"><canvas id="ctrlChart"></canvas></div>
+</div>
+<div class="sec">CUSUM · Detecção de Possíveis Surtos</div>
+<div class="card">
+  <div class="chdr"><div>
+    <div class="ctit">Soma Cumulativa de Desvios (CUSUM)</div>
+    <div class="csub">C(t)=max(0,C(t-1)+(x(t)-u(t)-k(t))) | k=0,5·sigma | h=4·sigma | sigma=IQR/1,35</div>
+  </div></div>
+  <div style="margin-bottom:9px;font-size:10px;color:var(--mut);letter-spacing:1px;text-transform:uppercase">Selecione o ano:</div>
+  <div class="cyrow" id="cyrow"></div>
+  <div class="cstats" id="cstats"></div>
+  <div class="leg" style="margin-bottom:12px">
+    <div class="li"><div class="ll" style="background:#48cae4"></div><span>CUSUM C(t)</span></div>
+    <div class="li"><div class="lk" style="border-color:#e63946"></div><span>Limiar h(t)</span></div>
+    <div class="li"><div class="ld" style="background:#e63946;border-radius:50%"></div><span>Semana em alarme</span></div>
+  </div>
+  <div style="height:370px"><canvas id="cusumChart"></canvas></div>
+</div>
+<div class="sec">Razão dos Totais Anuais · Base = 2016 (2.490 casos)</div>
+<div class="rgrid" id="rgrid"></div>
+<div class="ftr">
+  <span>Fonte: DENGUE_VCA · SE 01–53 · 2014–2026 · Vitória da Conquista</span>
+  <span>Baseline: excluídos 2016,2020,2024 · CUSUM k=0,5σ h=4σ σ=IQR/1,35</span>
+</div>
+</div>
+
+<script>
+// @@DADOS_INICIO@@
+const YEARS  = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
+const TOTALS = [128, 541, 2490, 169, 70, 377, 4240, 126, 462, 1190, 36431, 2758, 450];
+const POP    = [340199, 343230, 346069, 348718, 338885, 338480, 341128, 343643, 370879, 370879, 394024, 396613, 396613];
+const raw = [
+  [0, 5, 123, 8, 3, 4, 0, 1, 27, 8, 82, 39, 24],
+  [0, 4, 156, 6, 0, 1, 2, 1, 15, 19, 96, 41, 14],
+  [0, 13, 159, 9, 5, 2, 3, 3, 9, 3, 103, 114, 18],
+  [0, 8, 160, 12, 2, 2, 8, 1, 15, 15, 204, 114, 12],
+  [0, 2, 139, 4, 2, 4, 8, 2, 8, 18, 426, 92, 11],
+  [4, 6, 203, 7, 2, 3, 26, 1, 6, 24, 704, 120, 19],
+  [2, 4, 250, 8, 3, 3, 32, 3, 14, 40, 981, 141, 23],
+  [0, 2, 176, 5, 1, 4, 35, 4, 8, 23, 1515, 120, 23],
+  [2, 2, 93, 7, 7, 1, 58, 11, 9, 47, 2115, 114, 56],
+  [0, 8, 55, 5, 3, 4, 89, 3, 10, 42, 2301, 110, 22],
+  [4, 11, 60, 2, 3, 4, 127, 8, 13, 52, 2629, 107, 31],
+  [2, 13, 103, 1, 4, 2, 136, 6, 16, 49, 3095, 110, 48],
+  [2, 15, 148, 6, 1, 5, 213, 3, 17, 53, 2813, 92, 27],
+  [4, 27, 166, 6, 3, 2, 137, 6, 22, 34, 3250, 96, 42],
+  [3, 35, 70, 2, 2, 9, 252, 0, 19, 48, 3107, 74, 34],
+  [6, 43, 71, 8, 2, 6, 395, 7, 17, 39, 2894, 54, 46],
+  [12, 36, 65, 9, 2, 21, 399, 1, 17, 36, 2501, 69, 0],
+  [3, 27, 51, 8, 2, 15, 408, 1, 13, 53, 1889, 47, 0],
+  [6, 19, 46, 5, 0, 24, 323, 4, 15, 44, 1564, 68, 0],
+  [6, 25, 27, 2, 2, 36, 256, 5, 14, 37, 1126, 66, 0],
+  [8, 17, 16, 1, 1, 34, 168, 2, 7, 29, 851, 73, 0],
+  [8, 11, 18, 1, 1, 30, 170, 0, 14, 20, 520, 53, 0],
+  [15, 16, 14, 0, 1, 21, 212, 0, 5, 15, 264, 63, 0],
+  [4, 3, 27, 2, 3, 20, 170, 2, 5, 24, 214, 56, 0],
+  [3, 6, 8, 0, 0, 9, 102, 1, 3, 14, 128, 21, 0],
+  [2, 3, 7, 2, 0, 12, 88, 0, 8, 17, 128, 25, 0],
+  [3, 2, 5, 0, 0, 10, 68, 2, 5, 16, 54, 32, 0],
+  [0, 5, 5, 1, 0, 10, 69, 1, 6, 12, 74, 23, 0],
+  [1, 6, 2, 2, 0, 3, 108, 1, 4, 22, 88, 12, 0],
+  [0, 6, 6, 0, 0, 3, 59, 2, 1, 4, 66, 20, 0],
+  [0, 3, 3, 0, 1, 12, 33, 4, 5, 8, 44, 18, 0],
+  [0, 0, 1, 0, 2, 5, 19, 7, 5, 10, 34, 22, 0],
+  [2, 1, 3, 1, 1, 5, 8, 6, 7, 10, 31, 19, 0],
+  [0, 1, 1, 2, 0, 1, 5, 4, 4, 7, 26, 14, 0],
+  [0, 4, 3, 1, 0, 5, 4, 0, 3, 9, 19, 29, 0],
+  [0, 1, 4, 0, 0, 4, 5, 0, 2, 14, 5, 17, 0],
+  [0, 4, 0, 1, 0, 4, 3, 1, 4, 9, 2, 28, 0],
+  [0, 0, 1, 2, 0, 6, 1, 2, 4, 12, 9, 24, 0],
+  [6, 1, 1, 5, 1, 2, 4, 0, 7, 12, 7, 26, 0],
+  [1, 1, 3, 3, 1, 5, 9, 0, 4, 7, 4, 19, 0],
+  [3, 1, 6, 3, 0, 2, 11, 1, 5, 4, 10, 20, 0],
+  [0, 0, 2, 6, 1, 2, 1, 2, 5, 15, 22, 37, 0],
+  [1, 5, 3, 1, 0, 2, 1, 0, 5, 15, 15, 22, 0],
+  [1, 1, 1, 1, 3, 1, 1, 1, 2, 9, 27, 37, 0],
+  [0, 10, 5, 0, 1, 3, 2, 1, 2, 19, 26, 37, 0],
+  [0, 6, 2, 6, 0, 4, 3, 5, 1, 13, 23, 47, 0],
+  [0, 7, 4, 1, 0, 4, 3, 3, 9, 14, 35, 16, 0],
+  [0, 7, 4, 1, 0, 3, 0, 3, 5, 41, 65, 33, 0],
+  [5, 18, 1, 4, 0, 1, 0, 0, 4, 31, 75, 32, 0],
+  [1, 12, 7, 1, 2, 2, 1, 1, 5, 42, 72, 46, 0],
+  [0, 11, 0, 0, 0, 0, 2, 2, 21, 20, 62, 27, 0],
+  [1, 67, 6, 1, 2, 0, 3, 1, 11, 12, 36, 18, 0],
+  [7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0],
+];
+// @@DADOS_FIM@@
+
+const BASE16 = 2490;
+const EXCL   = new Set([2016,2020,2024]);
+const WEEKS  = Array.from({length:53},(_,i)=>`SE ${String(i+1).padStart(2,'0')}`);
+const PAL    = ['#64b5f6','#80deea','#e63946','#ffb74d','#a5d6a7','#ce93d8',
+                '#f06292','#4db6ac','#fff176','#ff8a65','#ef5350','#26c6da','#c77dff'];
+
+const byYear = YEARS.map((_,yi)=>raw.map(r=>r[yi]??0));
+const INC    = TOTALS.map((t,i)=>POP[i]>1000?+((t/POP[i])*100000).toFixed(1):0);
+const isEp   = YEARS.map(y=>EXCL.has(y));
+
+function qExc(arr,q){
+  const s=[...arr].sort((a,b)=>a-b),n=s.length;
+  const pos=(n+1)*q-1,lo=Math.floor(pos),hi=lo+1,fr=pos-lo;
+  return hi>=n?s[lo]:s[lo]+fr*(s[hi]-s[lo]);
+}
+
+const bIdx=YEARS.map((y,i)=>({y,i})).filter(o=>!EXCL.has(o.y)&&o.y!==2026).map(o=>o.i);
+const Q1=[],MED=[],Q3=[];
+for(let w=0;w<53;w++){
+  const bv=bIdx.map(i=>raw[w][i]);
+  Q1.push(+qExc(bv,.25).toFixed(2));
+  MED.push(+qExc(bv,.50).toFixed(2));
+  Q3.push(+qExc(bv,.75).toFixed(2));
+}
+const SIGMA=Q3.map((q,i)=>Math.max((q-Q1[i])/1.35,1.0));
+const K_VAL=SIGMA.map(s=>s*.5);
+const H_VAL=SIGMA.map(s=>s*4);
+
+function calcCusum(yi){
+  const C=[],alarms=[],pts=[];let cp=0;
+  for(let w=0;w<53;w++){
+    const c=Math.max(0,cp+(byYear[yi][w]-MED[w]-K_VAL[w]));
+    const al=c>H_VAL[w];
+    C.push(+c.toFixed(2));alarms.push(al?1:0);pts.push(al?+c.toFixed(2):null);cp=c;
+  }
+  const nAl=alarms.reduce((a,b)=>a+b,0);
+  return{C,alarms,pts,nAlarm:nAl,firstAlarm:alarms.indexOf(1),maxC:Math.max(...C)};
+}
+const CUSUM=YEARS.map((_,i)=>calcCusum(i));
+
+Chart.defaults.color='#4a6785';
+Chart.defaults.font.family="'DM Mono',monospace";
+Chart.defaults.font.size=11;
+const GR={color:'rgba(26,38,64,0.9)'};
+
+// KPI
+YEARS.forEach((yr,i)=>{
+  const ep=isEp[i],y26=yr===2026;
+  const tag=ep?'EXCL. BASELINE':y26?'EM CURSO':CUSUM[i].nAlarm>10?'CUSUM ALARME':'';
+  document.getElementById('kstrip').innerHTML+=`
+    <div class="kpi ${ep?'ep':''} ${y26?'k26':''}" style="--kc:${PAL[i]}">
+      <div class="kyr">${yr}</div>
+      <div class="kval">${TOTALS[i].toLocaleString('pt-BR')}</div>
+      <div class="kinc">${INC[i]}/100k</div>
+      <div class="ktag">${tag}</div>
+    </div>`;
+});
+
+// BAR
+new Chart(document.getElementById('barChart'),{
+  data:{labels:YEARS,datasets:[
+    {type:'bar',label:'Casos',data:TOTALS,yAxisID:'yL',order:2,
+     backgroundColor:YEARS.map((_,i)=>YEARS[i]===2026?'rgba(199,125,255,.5)':isEp[i]?'rgba(230,57,70,.75)':'rgba(72,202,228,.45)'),
+     borderColor:YEARS.map((_,i)=>YEARS[i]===2026?'#c77dff':isEp[i]?'#e63946':'#48cae4'),
+     borderWidth:1.5,borderRadius:5,borderSkipped:false},
+    {type:'line',label:'Incidencia/100k',data:INC,yAxisID:'yR',order:1,
+     borderColor:'#ffd166',backgroundColor:'rgba(255,209,102,.07)',
+     borderWidth:2,pointRadius:4,pointHoverRadius:6,
+     pointBackgroundColor:'#ffd166',pointBorderColor:'#06090f',pointBorderWidth:1.5,
+     tension:0.35,fill:false}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:true,position:'top',labels:{color:'#4a6785',boxWidth:11,padding:16}},
+      tooltip:{backgroundColor:'#0d1220',borderColor:'#1a2640',borderWidth:1,
+        titleColor:'#fff',bodyColor:'#d6e4f0',padding:11,
+        callbacks:{label:ctx=>{
+          if(ctx.datasetIndex===0) return[` Casos: ${(ctx.raw||0).toLocaleString('pt-BR')}${isEp[ctx.dataIndex]?' EXCL':YEARS[ctx.dataIndex]===2026?' EM CURSO':''}`];
+          return[` Incidencia: ${ctx.raw}/100k`];
+        }}}
+    },
+    scales:{
+      x:{grid:GR,ticks:{color:'#4a6785',font:{size:11,family:"'Syne',sans-serif",weight:'700'}}},
+      yL:{position:'left',grid:GR,ticks:{color:'#4a6785',callback:v=>v>=1000?(v/1000).toFixed(0)+'k':v},
+          title:{display:true,text:'Casos',color:'#48cae4',font:{size:10}}},
+      yR:{position:'right',grid:{drawOnChartArea:false},ticks:{color:'#ffd166',callback:v=>v.toFixed(0)+'/100k'},
+          title:{display:true,text:'Incidencia/100.000',color:'#ffd166',font:{size:10}}}
+    }
+  }
+});
+
+// CONTROL
+const ctrlSets=[
+  {label:'Q3',data:Q3,borderColor:'rgba(255,209,102,.65)',backgroundColor:'rgba(87,204,153,.11)',
+   borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:0.4,fill:'+1',order:50},
+  {label:'Q1',data:Q1,borderColor:'rgba(87,204,153,.5)',backgroundColor:'transparent',
+   borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:0.4,fill:false,order:51},
+  {label:'Mediana',data:MED,borderColor:'#57cc99',backgroundColor:'transparent',
+   borderWidth:2,pointRadius:0,tension:0.4,fill:false,order:49},
+  ...YEARS.map((yr,i)=>({
+    label:String(yr),data:byYear[i],borderColor:PAL[i],backgroundColor:'transparent',
+    borderWidth:yr===2026?3:isEp[i]?2:1.4,borderDash:isEp[i]?[4,3]:[],
+    pointRadius:0,pointHoverRadius:4,tension:0.38,fill:false,order:i,
+  }))
+];
+const ctrlChart=new Chart(document.getElementById('ctrlChart'),{
+  type:'line',data:{labels:WEEKS,datasets:ctrlSets},
+  options:{responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},
+      tooltip:{backgroundColor:'#0d1220',borderColor:'#1a2640',borderWidth:1,
+        titleColor:'#fff',bodyColor:'#d6e4f0',padding:9,
+        itemSort:(a,b)=>b.raw-a.raw,
+        filter:item=>item.datasetIndex<=1?false:item.raw>0,
+        callbacks:{
+          title:items=>items.find(i=>i.datasetIndex>1)?.label??'',
+          label:ctx=>{
+            const l=ctx.dataset.label;
+            if(l==='Mediana') return ` Mediana: ${ctx.raw}`;
+            if(l.startsWith('Q')) return ` ${l}: ${ctx.raw}`;
+            return ` ${l}: ${ctx.raw} casos`;
+          }
+        }
+      }
+    },
+    scales:{
+      x:{grid:GR,ticks:{color:'#4a6785',maxTicksLimit:14,callback:(_,i)=>i%4===0?WEEKS[i]:''}},
+      y:{grid:GR,ticks:{color:'#4a6785',callback:v=>v>=1000?(v/1000).toFixed(1)+'k':v}}
+    }
+  }
+});
+YEARS.forEach((yr,i)=>{
+  const b=document.createElement('button');
+  b.className='tbtn';b.style.borderColor=PAL[i];b.style.color=PAL[i];
+  b.textContent=yr+(isEp[i]?'*':'');
+  b.onclick=()=>{const ds=ctrlChart.data.datasets[i+3];ds.hidden=!ds.hidden;b.classList.toggle('dim',ds.hidden);ctrlChart.update();};
+  document.getElementById('trow').appendChild(b);
+});
+
+// CUSUM
+let cusumChart=null,selIdx=YEARS.indexOf(2026);
+function acol(n){return n===0?'#57cc99':n<=5?'#ffd166':n<=20?'#f4845f':'#e63946';}
+function buildStats(yi){
+  const d=CUSUM[yi],yr=YEARS[yi];
+  const fse=d.firstAlarm>=0?`SE ${d.firstAlarm+1}`:'—';
+  const st=d.nAlarm===0?'ENDERNICO':d.nAlarm<=5?'ATENCAO':d.nAlarm<=20?'ALERTA':'EPIDEMIA';
+  document.getElementById('cstats').innerHTML=`
+    <div class="csc"><div class="csl">Ano</div>
+      <div class="csv2" style="color:${PAL[yi]}">${yr}${EXCL.has(yr)?'<span style="font-size:9px;color:var(--red)"> excl.</span>':''}</div>
+      <div class="css">Casos: ${TOTALS[yi].toLocaleString('pt-BR')}</div></div>
+    <div class="csc"><div class="csl">Semanas em Alarme</div>
+      <div class="csv2" style="color:${acol(d.nAlarm)}">${d.nAlarm}</div>
+      <div class="css">de 53 (${((d.nAlarm/53)*100).toFixed(1)}%)</div></div>
+    <div class="csc"><div class="csl">1a SE em Alarme</div>
+      <div class="csv2" style="color:${d.firstAlarm>=0?'#e63946':'#57cc99'}">${fse}</div>
+      <div class="css">${d.firstAlarm>=0?'deteccao precoce':'sem alarme'}</div></div>
+    <div class="csc"><div class="csl">CUSUM Maximo</div>
+      <div class="csv2" style="color:${PAL[yi]}">${d.maxC>=1000?(d.maxC/1000).toFixed(1)+'k':d.maxC.toFixed(1)}</div>
+      <div class="css">valor acumulado pico</div></div>
+    <div class="csc"><div class="csl">Status</div>
+      <div class="csv2" style="color:${acol(d.nAlarm)};font-size:12px">
+        ${d.nAlarm===0?'✓ ENDERNICO':d.nAlarm<=5?'⚠ ATENCAO':d.nAlarm<=20?'⚡ ALERTA':'🔴 EPIDEMIA'}
+      </div>
+      <div class="css">baseline: 9 anos limpos</div></div>`;
+}
+function buildCusum(yi){
+  const d=CUSUM[yi],col=PAL[yi];
+  const ds=[
+    {label:`CUSUM ${YEARS[yi]}`,data:d.C,borderColor:col,backgroundColor:col+'18',
+     borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:0.3,fill:true,order:1},
+    {label:'Alarme',data:d.pts,borderColor:'#e63946',backgroundColor:'#e63946',
+     borderWidth:0,pointRadius:5,pointHoverRadius:7,showLine:false,order:0},
+    {label:'Limiar h',data:H_VAL.map(v=>+v.toFixed(2)),borderColor:'rgba(230,57,70,.65)',
+     backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:0,tension:0.3,fill:false,order:2},
+  ];
+  if(cusumChart){cusumChart.data.datasets=ds;cusumChart.update('none');return;}
+  cusumChart=new Chart(document.getElementById('cusumChart'),{
+    type:'line',data:{labels:WEEKS,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#0d1220',borderColor:'#1a2640',borderWidth:1,
+          titleColor:'#fff',bodyColor:'#d6e4f0',padding:9,
+          filter:item=>item.raw!==null&&item.raw!==undefined,
+          callbacks:{
+            title:items=>items[0].label,
+            label:ctx=>{
+              if(ctx.datasetIndex===0) return ` CUSUM: ${ctx.raw}`;
+              if(ctx.datasetIndex===1&&ctx.raw!==null) return ` ALARME: ${ctx.raw}`;
+              if(ctx.datasetIndex===2) return ` Limiar h: ${ctx.raw}`;
+            }
+          }
+        }
+      },
+      scales:{
+        x:{grid:GR,ticks:{color:'#4a6785',maxTicksLimit:14,callback:(_,i)=>i%4===0?WEEKS[i]:''}},
+        y:{grid:GR,ticks:{color:'#4a6785',callback:v=>v>=1000?(v/1000).toFixed(1)+'k':v},
+           title:{display:true,text:'C(t) Soma Cumulativa',color:'#4a6785',font:{size:10}}}
+      }
+    }
+  });
+}
+YEARS.forEach((yr,i)=>{
+  const d=CUSUM[i],ep=EXCL.has(yr),y26=yr===2026;
+  const hasAl=d.nAlarm>0;
+  const b=document.createElement('button');
+  b.className=`cybtn${ep?' cex':''}${hasAl?' al':''}${y26?' c26':''}${i===selIdx?' on':''}`;
+  b.innerHTML=`${yr}${hasAl?`<span class="adot" title="${d.nAlarm} alarmes"></span>`:''}`;
+  b.onclick=()=>{selIdx=i;document.querySelectorAll('.cybtn').forEach((el,j)=>el.classList.toggle('on',j===i));buildStats(i);buildCusum(i);};
+  document.getElementById('cyrow').appendChild(b);
+});
+buildStats(selIdx);buildCusum(selIdx);
+
+// RATIO
+function rc(r){return r<0.5?'#57cc99':r<1.0?'#a8dadc':r<2.0?'#f4a261':r<10?'#f4845f':'#e63946';}
+const maxR=Math.max(...TOTALS.map(t=>t/BASE16));
+YEARS.forEach((yr,i)=>{
+  const isB=yr===2016,ep=EXCL.has(yr);
+  const ratio=TOTALS[i]/BASE16,col=rc(ratio);
+  const pct=Math.min((ratio/maxR)*100,100).toFixed(1);
+  const rv=isB?`<span style="color:var(--cyn);font-size:10px">BASE=1.000x</span>`
+             :`<span style="color:${col};font-size:13px;font-weight:700">${ratio.toFixed(3)}x</span>`;
+  document.getElementById('rgrid').innerHTML+=`
+    <div class="rc ${isB?'rbase':''} ${ep?'rex':''}">
+      <div class="ryr">${yr}${ep?' <span style="color:var(--red);font-size:8px">excl.</span>':''}</div>
+      <div class="rtot">${TOTALS[i].toLocaleString('pt-BR')}</div>
+      <div class="rval">${rv}</div>
+      <div class="rinc">${INC[i]}/100k</div>
+      <div class="rbar"><div class="rbfill" style="width:${pct}%;background:${yr===2026?'#c77dff':col}"></div></div>
+    </div>`;
+});
+</script>
+</body>
+</html>
