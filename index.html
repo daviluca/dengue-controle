@@ -252,7 +252,7 @@ const WEEKS  = Array.from({length:53},(_,i)=>`SE ${String(i+1).padStart(2,'0')}`
 const PAL    = ['#64b5f6','#80deea','#e63946','#ffb74d','#a5d6a7','#ce93d8',
                 '#f06292','#4db6ac','#fff176','#ff8a65','#ef5350','#26c6da','#c77dff'];
 
-const byYear = YEARS.map((_,yi)=>raw.map(r=>r[yi]??0));
+const byYear = YEARS.map((_,yi)=>raw.map(r=>r[yi]!==undefined?r[yi]:null));
 const INC    = TOTALS.map((t,i)=>POP[i]>1000?+((t/POP[i])*100000).toFixed(1):0);
 const isEp   = YEARS.map(y=>EXCL.has(y));
 
@@ -277,7 +277,9 @@ const H_VAL=SIGMA.map(s=>s*4);
 function calcCusum(yi){
   const C=[],alarms=[],pts=[];let cp=0;
   for(let w=0;w<53;w++){
-    const c=Math.max(0,cp+(byYear[yi][w]-MED[w]-K_VAL[w]));
+    const x = byYear[yi][w];
+if(x === null){ C.push(null); alarms.push(0); pts.push(null); continue; }
+const c=Math.max(0,cp+(x-MED[w]-K_VAL[w]));
     const al=c>H_VAL[w];
     C.push(+c.toFixed(2));alarms.push(al?1:0);pts.push(al?+c.toFixed(2):null);cp=c;
   }
